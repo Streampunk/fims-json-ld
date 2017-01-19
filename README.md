@@ -244,6 +244,240 @@ and
 
 As you can see the DescriptiveMetadata node got a generated ID assigned. This was needed since it's referenced from the BMObject document. 
 
+## What's next?
 
+Knowing that we can have programmer friendly json-ld documents and deal with embedded resources easily, we can start thinking of how we can apply this in a REST API.
 
+### Approach 1: Creating BMContent and descriptiveMetadata separately
 
+A POST of Descriptive metadata to a REST API could look like this:
+
+```
+POST /DescriptiveMetadata HTTP/1.1
+{
+    "@context": "http://repository-server/contextEmbedded",
+    "type": "DescriptiveMetadata",
+    "date": "2015-05-23T21:00:00",
+    "hasRelatedLink": "http://www.Eurovision.tv/page/contest-details?event=2083",
+    "identifier": "2083",
+    "title": "Eurovision Song Contest 2015 Grand Final",
+    "esc:orderOk": "\n      1\n    ",
+    "esc:resultsKnown": "\n      1\n    ",
+    "esc:votingRules": "\n      Televoters and a professional jury in each country have a 50% stake in the outcome. The votes are revealed by spokespeople from all participating countries.\n    "
+}
+```
+```
+HTTP/1.1 201 Created
+Location: /DescriptiveMetadata/63636
+```
+
+The BMContent. Note that we used the location obtained in the response above as the URL for the descriptive metadata.
+```
+POST /BMContent HTTP/1.1
+{
+    "@context": "http://repository-server/contextEmbedded",
+    "type": "BMContent",
+    "dateCreated": "2015-05-23T21:00:00",
+    "dateModified": "2015-05-23T21:00:00",
+    "hasDescriptiveMetadata": "http://repository-server/DescriptiveMetadata/63636",
+    "hasPart": [
+        "http://repository-server/BMContent/2083_00_00_00",
+        "http://repository-server/BMContent/2083_01_06_16",
+        "http://repository-server/BMContent/2083_01_07_05",
+        "http://repository-server/BMContent/2083_00_10_07"
+    ],
+    "label": [
+        "Song contest",
+        "2015",
+        "Eurovision"
+    ]
+}
+```
+```
+HTTP/1.1 201 Created
+Location: /BMContent/63637
+```
+
+After having these resources stored on REST API we can get the BMContent would as following:
+
+```
+GET /BMContent/63637 HTTP/1.1
+```
+```
+HTTP/1.1 200 OK
+{
+    "@context": "http://repository-server/contextEmbedded",
+    "id": "http://repository-server/BMContent/63637",
+    "type": "BMContent",
+    "dateCreated": "2015-05-23T21:00:00",
+    "dateModified": "2015-05-23T21:00:00",
+    "hasDescriptiveMetadata": "http://repository-server/DescriptiveMetadata/63636",
+    "hasPart": [
+        "http://repository-server/BMContent/2083_00_00_00",
+        "http://repository-server/BMContent/2083_01_06_16",
+        "http://repository-server/BMContent/2083_01_07_05",
+        "http://repository-server/BMContent/2083_00_10_07"
+    ],
+    "label": [
+        "Song contest",
+        "2015",
+        "Eurovision"
+    ]
+}
+```
+And for the descriptive metadata
+```
+GET /DescriptiveMetadata/63636 HTTP/1.1
+```
+```
+HTTP/1.1 200 OK
+{
+    "@context": "http://repository-server/contextEmbedded",
+    "id": "http://repository-server/DescriptiveMetadata/63636",
+    "type": "DescriptiveMetadata",
+    "date": "2015-05-23T21:00:00",
+    "hasRelatedLink": "http://www.Eurovision.tv/page/contest-details?event=2083",
+    "identifier": "2083",
+    "title": "Eurovision Song Contest 2015 Grand Final",
+    "esc:orderOk": "\n      1\n    ",
+    "esc:resultsKnown": "\n      1\n    ",
+    "esc:votingRules": "\n      Televoters and a professional jury in each country have a 50% stake in the outcome. The votes are revealed by spokespeople from all participating countries.\n    "
+}
+```
+
+### Approach 2. Creating BMContent with embedded descriptiveMetadata
+
+We know from the examples above that we can untangle embedded resources easily. So here we make a POST of a BMContent with embedded DescriptiveMetadata
+
+```
+POST /BMContent HTTP/1.1
+{
+    "@context": "http://repository-server/contextEmbedded",
+    "type": "BMContent",
+    "dateCreated": "2015-05-23T21:00:00",
+    "dateModified": "2015-05-23T21:00:00",
+    "hasDescriptiveMetadata": {
+        "type": "DescriptiveMetadata",
+        "date": "2015-05-23T21:00:00",
+        "hasRelatedLink": "http://www.Eurovision.tv/page/contest-details?event=2083",
+        "identifier": "2083",
+        "title": "Eurovision Song Contest 2015 Grand Final",
+        "esc:orderOk": "\n      1\n    ",
+        "esc:resultsKnown": "\n      1\n    ",
+        "esc:votingRules": "\n      Televoters and a professional jury in each country have a 50% stake in the outcome. The votes are revealed by spokespeople from all participating countries.\n    "
+    },
+    "hasPart": [
+        "http://repository-server/BMContent/2083_00_00_00",
+        "http://repository-server/BMContent/2083_01_06_16",
+        "http://repository-server/BMContent/2083_01_07_05",
+        "http://repository-server/BMContent/2083_00_10_07"
+    ],
+    "label": [
+        "Song contest",
+        "2015",
+        "Eurovision"
+    ]
+}
+```
+```
+HTTP/1.1 201 Created
+Location: /BMContent/63637
+```
+
+Now we did a POST of a single document with an embedded resource. It's up to the vendor of the REST API to decide how it wants to deal with embedded data.
+
+Basicaly it has two options. 
+1. It processes the embedded resource as a seperate entity
+2. It does not process it and leaves it embedded.
+
+#### Option 1
+
+If a vendor of a fims service does not have special treatment of descriptive metadata, it can return the document as posted.
+
+```
+GET /BMContent/63637 HTTP/1.1
+```
+```
+HTTP/1.1 200 OK
+{
+    "@context": "http://repository-server/contextEmbedded",
+    "id": "http://repository-server/BMContent/63637",
+    "type": "BMContent",
+    "dateCreated": "2015-05-23T21:00:00",
+    "dateModified": "2015-05-23T21:00:00",
+    "hasDescriptiveMetadata": {
+        "type": "DescriptiveMetadata",
+        "date": "2015-05-23T21:00:00",
+        "hasRelatedLink": "http://www.Eurovision.tv/page/contest-details?event=2083",
+        "identifier": "2083",
+        "title": "Eurovision Song Contest 2015 Grand Final",
+        "esc:orderOk": "\n      1\n    ",
+        "esc:resultsKnown": "\n      1\n    ",
+        "esc:votingRules": "\n      Televoters and a professional jury in each country have a 50% stake in the outcome. The votes are revealed by spokespeople from all participating countries.\n    "
+    },
+    "hasPart": [
+        "http://repository-server/BMContent/2083_00_00_00",
+        "http://repository-server/BMContent/2083_01_06_16",
+        "http://repository-server/BMContent/2083_01_07_05",
+        "http://repository-server/BMContent/2083_00_10_07"
+    ],
+    "label": [
+        "Song contest",
+        "2015",
+        "Eurovision"
+    ]
+}
+```
+
+#### Option 2
+
+If a vendor of FIMS service wants to treat descriptive metadata separately it can create two resources when the POST was made. To retrieve them we would need to do:
+
+```
+GET /BMContent/63637 HTTP/1.1
+```
+```
+HTTP/1.1 200 OK
+{
+    "@context": "http://repository-server/contextEmbedded",
+    "id": "http://repository-server/BMContent/63637",
+    "type": "BMContent",
+    "dateCreated": "2015-05-23T21:00:00",
+    "dateModified": "2015-05-23T21:00:00",
+    "hasDescriptiveMetadata": "http://repository-server/DescriptiveMetadata/63636",
+    "hasPart": [
+        "http://repository-server/BMContent/2083_00_00_00",
+        "http://repository-server/BMContent/2083_01_06_16",
+        "http://repository-server/BMContent/2083_01_07_05",
+        "http://repository-server/BMContent/2083_00_10_07"
+    ],
+    "label": [
+        "Song contest",
+        "2015",
+        "Eurovision"
+    ]
+}
+```
+
+After the retrieval of the BMContent we know the URL of the DescriptiveMetadata. So let's get that as well.
+
+```
+GET /DescriptiveMetadata/63636 HTTP/1.1
+```
+```
+HTTP/1.1 200 OK
+{
+    "@context": "http://repository-server/contextEmbedded",
+    "id": "http://repository-server/DescriptiveMetadata/63636",
+    "type": "DescriptiveMetadata",
+    "date": "2015-05-23T21:00:00",
+    "hasRelatedLink": "http://www.Eurovision.tv/page/contest-details?event=2083",
+    "identifier": "2083",
+    "title": "Eurovision Song Contest 2015 Grand Final",
+    "esc:orderOk": "\n      1\n    ",
+    "esc:resultsKnown": "\n      1\n    ",
+    "esc:votingRules": "\n      Televoters and a professional jury in each country have a 50% stake in the outcome. The votes are revealed by spokespeople from all participating countries.\n    "
+}
+```
+
+As shown here, it pretty much depends on the REST API implementor on how to deal with embedded resources. However it should be able to process it either way.
