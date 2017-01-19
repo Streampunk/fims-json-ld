@@ -1,0 +1,22 @@
+{
+  "name": "fims-json-ld",
+  "version": "0.0.1",
+  "description": "FIMS 2.0 json-ld try outs",
+  "author": "Joost Rovers <joost.rovers@glookast.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/joostrovers/fims-json-ld.git"
+  },
+  "license": "Apache-2.0",
+  "scripts": {
+    "start": "node ./app.js"
+  },
+  "dependencies": {
+    "jsonld": "^0.4.11"
+  },
+  "bugs": {
+    "url": "https://github.com/joostrovers/fims-json-ld/issues"
+  },
+  "homepage": "https://github.com/joostrovers/fims-json-ld#readme",
+  "main": "app.js"
+}
