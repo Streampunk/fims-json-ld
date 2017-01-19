@@ -480,4 +480,4 @@ HTTP/1.1 200 OK
 }
 ```
 
-As shown here, it pretty much depends on the REST API implementor on how to deal with embedded resources. However it should be able to process it either way.
+As shown here, it pretty much depends on the REST API implementor on how to deal with embedded resources.
